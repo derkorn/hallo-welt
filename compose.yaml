@@ -1,8 +1,16 @@
 services:
+  proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - whoami
+
   web:
     build: .
-    ports:
-      - "8080:5001"
     depends_on:
       - redis
 
@@ -11,6 +19,9 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis-daten:/data
+
+  whoami:
+    image: traefik/whoami
 
 volumes:
   redis-daten:
