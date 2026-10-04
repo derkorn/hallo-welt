@@ -1,18 +1,27 @@
 services:
   proxy:
-    image: nginx:1.27-alpine
+    image: traefik:v3
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
     ports:
       - "80:80"
+      - "8080:8080"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - web
-      - whoami
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
   web:
     build: .
     depends_on:
       - redis
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.hallo.rule=Host(`hallo.localhost`)
+      - traefik.http.routers.hallo.entrypoints=web
+      - traefik.http.services.hallo.loadbalancer.server.port=5001
 
   redis:
     image: redis:7-alpine
@@ -22,6 +31,10 @@ services:
 
   whoami:
     image: traefik/whoami
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.localhost`)
+      - traefik.http.routers.whoami.entrypoints=web
 
 volumes:
   redis-daten:
