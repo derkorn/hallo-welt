@@ -1,24 +1,12 @@
 services:
-  proxy:
-    image: traefik:v3
-    restart: unless-stopped
-    command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --api.dashboard=true
-      - --api.insecure=true
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
   web:
     build: .
     restart: unless-stopped
     depends_on:
       - redis
+    networks:
+      - default
+      - proxy
     labels:
       - traefik.enable=true
       - traefik.http.routers.hallo.rule=Host(`hallo.${DOMAIN}`)
@@ -32,13 +20,9 @@ services:
     volumes:
       - redis-daten:/data
 
-  whoami:
-    image: traefik/whoami
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.whoami.rule=Host(`whoami.${DOMAIN}`)
-      - traefik.http.routers.whoami.entrypoints=web
-
 volumes:
   redis-daten:
+
+networks:
+  proxy:
+    external: true
